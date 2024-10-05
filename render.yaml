@@ -1,4 +1,3 @@
 version: 1
-staticSites:
   - name: my-static-site  # 自由な名前
     publishDirectory: ./dist  # あなたの静的ファイルが置かれているパス
