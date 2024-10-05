@@ -42,22 +42,8 @@
             background-color: #218838;
         }
 
-        .link-buttons {
+        #result {
             margin-top: 20px;
-        }
-
-        .link-buttons .button {
-            display: inline-block;
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-
-        .link-buttons .button:hover {
-            background-color: #0056b3;
         }
     </style>
 </head>
@@ -67,71 +53,41 @@
         <input type="text" id="urlInput" placeholder="URLを入力">
         <button id="downloadBtn">PDFをダウンロード</button>
         <div id="result"></div>
-
         <h2>使い方</h2>
         <p>1. 上記のテキストボックスに変換したいウェブサイトのURLを入力してください。</p>
         <p>2. 「PDFをダウンロード」ボタンをクリックすると、ウェブサイトがPDFファイルとしてダウンロードされます。</p>
-        
-        <div class="link-buttons">
-            <a href="https://github.com/yourusername/yourrepo" target="_blank" class="button">GitHubリポジトリ</a>
-            <a href="https://example.com" target="_blank" class="button">公式サイト</a>
-        </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.2/jspdf.debug.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             document.body.style.opacity = 1;
         });
         
-        document.getElementById('downloadBtn').addEventListener('click', function() {
+        document.getElementById('downloadBtn').addEventListener('click', async function() {
             const url = document.getElementById('urlInput').value;
             const resultDiv = document.getElementById('result');
-            
-            resultDiv.textContent = ""; // 前のメッセージをクリア
 
+            resultDiv.textContent = ""; // メッセージをクリア
             if (!url) {
                 resultDiv.textContent = "エラー: URLを入力してください。";
                 return;
             }
 
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(' Network response was not ok');
+                const text = await response.text();
 
-            iframe.onload = function() {
-                html2canvas(iframe.contentWindow.document.body).then(canvas => {
-                    const pdf = new jsPDF();
-                    const imgData = canvas.toDataURL('image/png');
-                    const imgWidth = 190; 
-                    const pageHeight = 295; 
-                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                    let heightLeft = imgHeight;
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+                pdf.text(text, 10, 10); // 初期位置を設定
 
-                    let position = 0;
-
-                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-
-                    while (heightLeft >= 0) {
-                        position = heightLeft - imgHeight;
-                        pdf.addPage();
-                        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                        heightLeft -= pageHeight;
-                    }
-
-                    pdf.save('downloaded.pdf');
-                    resultDiv.textContent = "PDFが正常にダウンロードされました。";
-                }).catch(err => {
-                    resultDiv.textContent = "エラー: PDFの生成中にエラーが発生しました。";
-                });
-            };
-
-            iframe.onerror = function() {
-                resultDiv.textContent = "エラー: URLの読み込み中にエラーが発生しました。正しいURLを入力してください。";
-            };
-
-            iframe.src = url; // iframeにURLを設定してページをロード
+                // PDFを保存
+                pdf.save('downloaded.pdf');
+                resultDiv.textContent = "PDFが正常にダウンロードされました。";
+            } catch (error) {
+                resultDiv.textContent = "エラー: " + error.message;
+            }
         });
     </script>
 </body>
